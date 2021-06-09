@@ -5,7 +5,7 @@ export default function signup() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { doRequest, errors } = useRequest({
-    url: "/api/users/signup",
+    url: "/api/users/signin",
     method: "post",
     body: {
       email,
@@ -22,7 +22,7 @@ export default function signup() {
 
   return (
     <form onSubmit={onSubmit}>
-      <h1>Sign Up </h1>
+      <h1>Sign in </h1>
       <div className="form-group">
         <label>Email address</label>
         <input
@@ -46,7 +46,7 @@ export default function signup() {
       </div>
 
       {errors}
-      <button className="btn btn-primary">Sign up</button>
+      <button className="btn btn-primary">Sign in</button>
     </form>
   );
 }
