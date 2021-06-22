@@ -16,24 +16,49 @@ router.post("/api/products",requireAuth,[
     .withMessage('Price must be greater than 0')
 
 ],validateRequest,async (req:Request,res:Response)=>{
- 
+
     const {title,price} = req.body;
 
     const product = Product.build({
         title,
         price,
         userId:req.currentUser!.id
-    })
+    });
+    try{
     await product.save();
-    
+    }catch(err){
+    console.log(err);
+    }
     new ProductCreatedPublisher(natsWrapper.client).publish({
         id:product.id,
         title:product.title,
         price:product.price,
-        userId:product.userId
+        userId:product.userId,
+        version:product.version
     });
 
     res.status(201).send(product);
 });
 
 export {router as createProductRouter};
+
+
+
+
+// const { title, price } = req.body;
+
+// const ticket = Ticket.build({
+//   title,
+//   price,
+//   userId: req.currentUser!.id,
+// });
+// await ticket.save();
+// new TicketCreatedPublisher(natsWrapper.client).publish({
+//   id: ticket.id,
+//   title: ticket.title,
+//   price: ticket.price,
+//   userId: ticket.userId,
+// //   version: ticket.version,
+// // });
+
+// res.status(201).send(ticket);

@@ -1,0 +1,71 @@
+import { Message } from 'node-nats-streaming';
+import mongoose from 'mongoose';
+import { ProductUpdatedEvent } from '@buy.com/common';
+import { ProductUpdatedListener } from '../product-updated-listener';
+import { natsWrapper } from '../../../nats-wrapper';
+import { Product } from '../../../models/product';
+
+const setup = async () => {
+  // Create a listener
+  const listener = new ProductUpdatedListener(natsWrapper.client);
+
+  // Create and save a product
+  const product = Product.build({
+    id: mongoose.Types.ObjectId().toHexString(),
+    title: 'concert',
+    price: 20,
+  });
+  await product.save();
+
+  // Create a fake data object
+  const data: ProductUpdatedEvent['data'] = {
+    id: product.id,
+    version: product.version + 1,
+    title: 'uggs',
+    price: 99,
+    userId: 'hfkuyt876976897',
+  };
+
+  // Create a fake msg object
+  // @ts-ignore
+  const msg: Message = {
+    ack: jest.fn(),
+  };
+
+  // return all of this stuff
+  return { msg, data, product, listener };
+};
+
+it('finds, updates, and saves a product', async () => {
+  const { msg, data, product, listener } = await setup();
+
+  await listener.onMessage(data, msg);
+
+  const updatedproduct = await Product.findById(product.id);
+
+  expect(updatedproduct!.title).toEqual(data.title);
+  expect(updatedproduct!.price).toEqual(data.price);
+  expect(updatedproduct!.version).toEqual(data.version);
+});
+
+it('acks the message', async () => {
+  const { msg, data, listener } = await setup();
+
+  await listener.onMessage(data, msg);
+
+  expect(msg.ack).toHaveBeenCalled();
+});
+it('does not call ack if the event has a skipped version number', async () => {
+    const { msg, data, listener, product } = await setup();
+  
+    data.version = 10;
+  
+    try {
+      await listener.onMessage(data, msg);
+    } catch (err) {
+        console.log(err)
+    }
+  
+    expect(msg.ack).not.toHaveBeenCalled();
+  });
+  

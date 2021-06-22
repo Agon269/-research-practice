@@ -33,14 +33,19 @@ router.put("/api/products/:id",requireAuth,[
         title:req.body.title,
         price:req.body.price
     })
-  
-    await product.save();
+    try{
+
+        await product.save();
+    }catch(err){
+        console.log(err);
+    }
 
     new ProductUpdatedListender(natsWrapper.client).publish({
         id:product.id,
         title:product.title,
         price:product.price,
-        userId:product.userId
+        userId:product.userId,
+        version:product.version
     });
 
  res.status(201).send(product);
